@@ -354,7 +354,7 @@ class BaseKubeflowTest(tf.test.TestCase):
         '--user',
         'root',
         '--execute',
-        'drop database {};'.format(db_name),
+        'drop database if exists {};'.format(db_name),
     ]
     absl.logging.info('Dropping MLMD DB with name: {}'.format(db_name))
 
@@ -395,10 +395,8 @@ class BaseKubeflowTest(tf.test.TestCase):
     return pipeline
 
   def _get_kubeflow_metadata_config(
-      self, pipeline_name: Text) -> kubeflow_pb2.KubeflowMetadataConfig:
+      self) -> kubeflow_pb2.KubeflowMetadataConfig:
     config = kubeflow_dag_runner.get_default_kubeflow_metadata_config()
-    # Overwrite the DB name.
-    config.mysql_db_name.value = self._get_mlmd_db_name(pipeline_name)
     return config
 
   def _compile_and_run_pipeline(self,
@@ -412,8 +410,7 @@ class BaseKubeflowTest(tf.test.TestCase):
     """
     pipeline_name = pipeline.pipeline_info.pipeline_name
     config = kubeflow_dag_runner.KubeflowDagRunnerConfig(
-        kubeflow_metadata_config=self._get_kubeflow_metadata_config(
-            pipeline_name),
+        kubeflow_metadata_config=self._get_kubeflow_metadata_config(),
         tfx_image=self._container_image)
     kubeflow_dag_runner.KubeflowDagRunner(config=config).run(pipeline)
 

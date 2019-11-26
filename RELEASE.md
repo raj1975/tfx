@@ -23,6 +23,9 @@
 *   Added new example of chicago_taxi_pipeline on Google Cloud Bigquery ML.
 *   Supported hparams artifact as input in Trainer, this is for preparing the
     tuner support.
+*   Pipelines compiled using KubeflowDagRunner now defaults to using the
+    gRPC-based MLMD server deployed in Kubeflow Pipelines clusters when
+    performing operations on pipeline metadata.
 
 ## Bug fixes and other changes
 
