@@ -25,28 +25,10 @@ from typing import Dict, List, Text
 
 import tensorflow as tf
 from tfx.proto import example_gen_pb2
-from tfx.types.artifact import Artifact
 from tfx.types.channel import Channel
 from tfx.types.component_spec import ChannelParameter
 from tfx.types.component_spec import ComponentSpec
 from tfx.types.component_spec import ExecutionParameter
-from tfx.types.standard_artifacts import Examples
-
-
-class _InputArtifact(Artifact):
-  TYPE_NAME = 'InputArtifact'
-
-
-class _OutputArtifact(Artifact):
-  TYPE_NAME = 'OutputArtifact'
-
-
-class _X(Artifact):
-  TYPE_NAME = 'X'
-
-
-class _Z(Artifact):
-  TYPE_NAME = 'Z'
 
 
 class _BasicComponentSpec(ComponentSpec):
@@ -56,10 +38,10 @@ class _BasicComponentSpec(ComponentSpec):
       'proto': ExecutionParameter(type=example_gen_pb2.Input, optional=True),
   }
   INPUTS = {
-      'input': ChannelParameter(type=_InputArtifact),
+      'input': ChannelParameter(type_name='InputType'),
   }
   OUTPUTS = {
-      'output': ChannelParameter(type=_OutputArtifact),
+      'output': ChannelParameter(type_name='OutputType'),
   }
   _INPUT_COMPATIBILITY_ALIASES = {
       'future_input_name': 'input',
@@ -87,8 +69,8 @@ class ComponentSpecTest(tf.test.TestCase):
         example_gen_pb2.Input.Split(name='name2', pattern='pattern2'),
         example_gen_pb2.Input.Split(name='name3', pattern='pattern3'),
     ])
-    input_channel = Channel(type=_InputArtifact)
-    output_channel = Channel(type=_OutputArtifact)
+    input_channel = Channel(type_name='InputType')
+    output_channel = Channel(type_name='OutputType')
     spec = _BasicComponentSpec(
         folds=10, proto=proto, input=input_channel, output=output_channel)
     # Verify proto property.
@@ -119,15 +101,15 @@ class ComponentSpecTest(tf.test.TestCase):
 
     with self.assertRaisesRegexp(
         TypeError,
-        '.*should be a Channel of .*InputArtifact.*got (.|\\s)*Examples.*'):
+        '.*should be a Channel of .*InputType.*got (.|\\s)*WrongType.*'):
       spec = _BasicComponentSpec(
-          folds=10, input=Channel(type=Examples), output=output_channel)
+          folds=10, input=Channel(type_name='WrongType'), output=output_channel)
 
     with self.assertRaisesRegexp(
         TypeError,
-        '.*should be a Channel of .*OutputArtifact.*got (.|\\s)*Examples.*'):
+        '.*should be a Channel of .*OutputType.*got (.|\\s)*WrongType.*'):
       spec = _BasicComponentSpec(
-          folds=10, input=input_channel, output=Channel(type=Examples))
+          folds=10, input=input_channel, output=Channel(type_name='WrongType'))
 
   def testInvalidComponentspecMissingProperties(self):
 
@@ -201,7 +183,7 @@ class ComponentSpecTest(tf.test.TestCase):
       _ = WrongTypeComponentSpecA()
 
     class WrongTypeComponentSpecB(ComponentSpec):
-      PARAMETERS = {'x': ChannelParameter(type=_X)}
+      PARAMETERS = {'x': ChannelParameter(type_name='X')}
       INPUTS = {}
       OUTPUTS = {}
 
@@ -231,7 +213,7 @@ class ComponentSpecTest(tf.test.TestCase):
 
     class DuplicatePropertyComponentSpec(ComponentSpec):
       PARAMETERS = {'x': ExecutionParameter(type=int)}
-      INPUTS = {'x': ChannelParameter(type=_X)}
+      INPUTS = {'x': ChannelParameter(type_name='X')}
       OUTPUTS = {}
 
     with self.assertRaisesRegexp(ValueError, 'has a duplicate argument'):
@@ -244,17 +226,17 @@ class ComponentSpecTest(tf.test.TestCase):
           'x': ExecutionParameter(type=int),
           'y': ExecutionParameter(type=int, optional=True),
       }
-      INPUTS = {'z': ChannelParameter(type=_Z)}
+      INPUTS = {'z': ChannelParameter(type_name='Z')}
       OUTPUTS = {}
 
     with self.assertRaisesRegexp(ValueError, 'Missing argument'):
       _ = SimpleComponentSpec(x=10)
 
     with self.assertRaisesRegexp(ValueError, 'Missing argument'):
-      _ = SimpleComponentSpec(z=Channel(type=_Z))
+      _ = SimpleComponentSpec(z=Channel(type_name='Z'))
 
     # Okay since y is optional.
-    _ = SimpleComponentSpec(x=10, z=Channel(type=_Z))
+    _ = SimpleComponentSpec(x=10, z=Channel(type_name='Z'))
 
   def testExecutionParameterTypeCheck(self):
     int_parameter = ExecutionParameter(type=int)

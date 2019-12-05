@@ -18,28 +18,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import inspect
-
 from typing import Iterable, Optional, Text, Type
 
 from tfx.types.artifact import Artifact
 from tfx.utils import json_utils
-
-
-class ChannelProducerInfo(json_utils.Jsonable):
-  """A class to hold producer related information.
-
-  This class serves as one of the main sources for downstream nodes to generate
-  proper MLMD queries (API calls) to fetch desired artifacts.
-
-  Attributes:
-    component_id: the component id of the producer component
-    key: the output key of the produced artifacts
-  """
-
-  def __init__(self, component_id: Text, key: Text):
-    self.component_id = component_id
-    self.key = key
 
 
 class Channel(json_utils.Jsonable):
@@ -53,36 +35,37 @@ class Channel(json_utils.Jsonable):
     type_name: A string representing the artifact type the Channel takes.
   """
 
+  # TODO(b/124763842): Consider replace type_name with ArtifactType.
   # TODO(b/125348988): Add support for real Channel in addition to static ones.
   def __init__(
       self,
+      type_name: Optional[Text] = None,
       type: Optional[Type[Artifact]] = None,  # pylint: disable=redefined-builtin
-      artifacts: Optional[Iterable[Artifact]] = None,
-      producer_info: Optional[ChannelProducerInfo] = None):
+      artifacts: Optional[Iterable[Artifact]] = None):
     """Initialization of Channel.
 
     Args:
-      type: Subclass of Artifact that represents the type of this Channel.
+      type_name: Name of the type that should be fed into or read from the
+        Channel. If not specified, "type" must be specified instead.
+      type: Subclass of Artifact that represents the type of the Channel. If not
+        specified, "type_name" must be specified instead.
       artifacts: (Optional) A collection of artifacts as the values that can be
         read from the Channel. This is used to construct a static Channel.
-      producer_info: (Optional) Holds the producer component info of the
-        channel. This will be consumed by downstream component to assemble MLMD
-        query to fetch the desired artifacts.
     """
-    if not (inspect.isclass(type) and issubclass(type, Artifact)):  # pytype: disable=wrong-arg-types
+    if bool(type_name) == bool(type):
       raise ValueError(
-          'Argument "type" of Channel constructor must be a subclass of '
-          'tfx.Artifact (got %r).' % (type,))
+          'Exactly one of "type" or "type_name" must be passed to the '
+          'constructor of Channel.')
+    if not type_name:
+      if not issubclass(type, Artifact):  # pytype: disable=wrong-arg-types
+        raise ValueError(
+            'Argument "type" of Channel constructor must be a subclass of'
+            'tfx.Artifact.')
+      type_name = type.TYPE_NAME  # pytype: disable=attribute-error
 
-    self.type = type
+    self.type_name = type_name
     self._artifacts = artifacts or []
     self._validate_type()
-    # This will be populated during compilation time
-    self.producer_info = producer_info
-
-  @property
-  def type_name(self):
-    return self.type.TYPE_NAME
 
   def __repr__(self):
     artifacts_str = '\n    '.join(repr(a) for a in self._artifacts)

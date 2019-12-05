@@ -68,9 +68,7 @@ class BaseComponentLauncher(with_metaclass(abc.ABCMeta, object)):
     """
     self._pipeline_info = pipeline_info
     self._component_info = data_types.ComponentInfo(
-        component_type=component.type,
-        component_id=component.id,
-        pipeline_info=self._pipeline_info)
+        component_type=component.type, component_id=component.id)
     self._driver_args = driver_args
 
     self._driver_class = component.driver_class

@@ -18,7 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tfx import types
+from tfx.utils import types
 
 
 def is_model_blessed(model_blessing: types.Artifact) -> bool:

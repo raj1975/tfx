@@ -25,19 +25,10 @@ import tensorflow as tf
 from google.protobuf.json_format import ParseError
 from tfx.orchestration import data_types
 from tfx.proto import example_gen_pb2
-from tfx.types.artifact import Artifact
 from tfx.types.channel import Channel
 from tfx.types.component_spec import ChannelParameter
 from tfx.types.component_spec import ComponentSpec
 from tfx.types.component_spec import ExecutionParameter
-
-
-class _InputArtifact(Artifact):
-  TYPE_NAME = 'InputArtifact'
-
-
-class _OutputArtifact(Artifact):
-  TYPE_NAME = 'OutputArtifact'
 
 
 class _BasicComponentSpec(ComponentSpec):
@@ -47,10 +38,10 @@ class _BasicComponentSpec(ComponentSpec):
       'proto': ExecutionParameter(type=example_gen_pb2.Input, optional=True),
   }
   INPUTS = {
-      'input': ChannelParameter(type=_InputArtifact),
+      'input': ChannelParameter(type_name='InputType'),
   }
   OUTPUTS = {
-      'output': ChannelParameter(type=_OutputArtifact),
+      'output': ChannelParameter(type_name='OutputType'),
   }
   _INPUT_COMPATIBILITY_ALIASES = {
       'future_input_name': 'input',
@@ -71,8 +62,8 @@ class DataTypesTest(tf.test.TestCase):
         dict(name='name2', pattern='pattern2'),
         dict(name='name3', pattern='pattern3'),
     ])
-    input_channel = Channel(type=_InputArtifact)
-    output_channel = Channel(type=_OutputArtifact)
+    input_channel = Channel(type_name='InputType')
+    output_channel = Channel(type_name='OutputType')
     spec = _BasicComponentSpec(
         folds=10, proto=proto, input=input_channel, output=output_channel)
     # Verify proto property.
@@ -94,8 +85,8 @@ class DataTypesTest(tf.test.TestCase):
         dict(name='name2', pattern=42),
         dict(name='name3', pattern='pattern3'),
     ])
-    input_channel = Channel(type=_InputArtifact)
-    output_channel = Channel(type=_OutputArtifact)
+    input_channel = Channel(type_name='InputType')
+    output_channel = Channel(type_name='OutputType')
 
     with self.assertRaisesRegexp(
         ParseError, 'Failed to parse .* field: expected string or '

@@ -20,8 +20,6 @@ from __future__ import print_function
 
 import re
 from typing import Text
-# utils.py should not be used in container_entrypoint.py because of its
-# dependency on KFP.
 from kfp import dsl
 
 from tfx.orchestration import data_types

@@ -35,20 +35,18 @@
               },
               "properties": {
                 "split_names": {
-                  "string_value": "[\"examples\"]"
+                  "string_value": "[\"{{pipelineparam:op=;name=example-gen-output-name}}\"]"
                 }
               }
             },
             "artifact_type": {
               "name": "ExamplesPath",
               "properties": {
-                "span": "INT",
                 "split_names": "STRING"
               }
             }
           }
         ],
-        "type": null,
         "type_name": "ExamplesPath"
       }
     }
@@ -91,17 +89,11 @@
             "artifact_type": {
               "name": "ExampleStatisticsPath",
               "properties": {
-                "span": "INT",
                 "split_names": "STRING"
               }
             }
           }
         ],
-        "type": {
-          "__class__": "ExampleStatistics",
-          "__module__": "tfx.types.standard_artifacts",
-          "__tfx_object_type__": "class"
-        },
         "type_name": "ExampleStatisticsPath"
       }
     }

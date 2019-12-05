@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import json
 import os
+from typing import Text
 from kfp import dsl
 import tensorflow as tf
 
@@ -104,6 +105,8 @@ class BaseComponentTest(tf.test.TestCase):
         '--component_config',
         'null',
     ]
+    print('self.component.container_op',
+          repr(self.component.container_op.arguments))
     self.assertEqual(self.component.container_op.arguments[:len(expected_args)],
                      expected_args)
 
@@ -121,8 +124,10 @@ class BaseComponentWithPipelineParamTest(tf.test.TestCase):
     super(BaseComponentWithPipelineParamTest, self).setUp()
 
     test_pipeline_root = dsl.PipelineParam(name='pipeline-root-param')
-    example_gen_buckets = data_types.RuntimeParameter(
-        name='example-gen-buckets', ptype=int, default=10)
+    example_gen_output_name = data_types.RuntimeParameter(
+        name='example-gen-output-name',
+        ptype=Text,
+        default='default-to-be-discarded')
 
     examples = standard_artifacts.ExternalArtifact()
     example_gen = csv_example_gen_component.CsvExampleGen(
@@ -130,8 +135,8 @@ class BaseComponentWithPipelineParamTest(tf.test.TestCase):
         output_config={
             'split_config': {
                 'splits': [{
-                    'name': 'examples',
-                    'hash_buckets': example_gen_buckets
+                    'name': example_gen_output_name,
+                    'hash_buckets': 10
                 }]
             }
         })
@@ -232,6 +237,8 @@ class BaseComponentWithPipelineParamTest(tf.test.TestCase):
         '--component_config',
         'null',
     ]
+    print('statistics_gen', repr(self.statistics_gen.container_op.arguments))
+    print('example_gen', repr(self.example_gen.container_op.arguments))
     self.assertEqual(
         self.statistics_gen.container_op
         .arguments[:len(statistics_gen_expected_args)],

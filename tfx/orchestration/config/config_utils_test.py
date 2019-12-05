@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tfx import types
 from tfx.components.base import executor_spec
 from tfx.orchestration.config import config_utils
 from tfx.orchestration.config import docker_component_config
@@ -32,7 +33,7 @@ from tfx.types import channel_utils
 class ConfigUtilsTest(tf.test.TestCase):
 
   def testFindComponentLaunchInfoReturnDefaultLaunchInfo(self):
-    input_artifact = test_utils._InputArtifact()
+    input_artifact = types.Artifact(type_name='InputPath')
     component = test_utils._FakeComponent(
         name='FakeComponent',
         input_channel=channel_utils.as_channel([input_artifact]))
@@ -46,7 +47,7 @@ class ConfigUtilsTest(tf.test.TestCase):
     self.assertIsNone(c_config)
 
   def testFindComponentLaunchInfoReturnConfigOverride(self):
-    input_artifact = test_utils._InputArtifact()
+    input_artifact = types.Artifact(type_name='InputPath')
     component = test_utils._FakeComponent(
         name='FakeComponent',
         input_channel=channel_utils.as_channel([input_artifact]),
@@ -71,7 +72,7 @@ class ConfigUtilsTest(tf.test.TestCase):
     self.assertEqual(override_config, c_config)
 
   def testFindComponentLaunchInfoFailWithNoLauncherClassFound(self):
-    input_artifact = test_utils._InputArtifact()
+    input_artifact = types.Artifact(type_name='InputPath')
     component = test_utils._FakeComponent(
         name='FakeComponent',
         input_channel=channel_utils.as_channel([input_artifact]))

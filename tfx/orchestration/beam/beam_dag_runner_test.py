@@ -32,26 +32,6 @@ from tfx.types.component_spec import ChannelParameter
 _executed_components = []
 
 
-class _ArtifactTypeA(types.Artifact):
-  TYPE_NAME = 'ArtifactTypeA'
-
-
-class _ArtifactTypeB(types.Artifact):
-  TYPE_NAME = 'ArtifactTypeB'
-
-
-class _ArtifactTypeC(types.Artifact):
-  TYPE_NAME = 'ArtifactTypeC'
-
-
-class _ArtifactTypeD(types.Artifact):
-  TYPE_NAME = 'ArtifactTypeD'
-
-
-class _ArtifactTypeE(types.Artifact):
-  TYPE_NAME = 'ArtifactTypeE'
-
-
 class _FakeComponentAsDoFn(beam_dag_runner._ComponentAsDoFn):
 
   def _run_component(self):
@@ -69,38 +49,38 @@ class _FakeComponentAsDoFn(beam_dag_runner._ComponentAsDoFn):
 class _FakeComponentSpecA(types.ComponentSpec):
   PARAMETERS = {}
   INPUTS = {}
-  OUTPUTS = {'output': ChannelParameter(type=_ArtifactTypeA)}
+  OUTPUTS = {'output': ChannelParameter(type_name='a')}
 
 
 class _FakeComponentSpecB(types.ComponentSpec):
   PARAMETERS = {}
-  INPUTS = {'a': ChannelParameter(type=_ArtifactTypeA)}
-  OUTPUTS = {'output': ChannelParameter(type=_ArtifactTypeB)}
+  INPUTS = {'a': ChannelParameter(type_name='a')}
+  OUTPUTS = {'output': ChannelParameter(type_name='b')}
 
 
 class _FakeComponentSpecC(types.ComponentSpec):
   PARAMETERS = {}
-  INPUTS = {'a': ChannelParameter(type=_ArtifactTypeA)}
-  OUTPUTS = {'output': ChannelParameter(type=_ArtifactTypeC)}
+  INPUTS = {'a': ChannelParameter(type_name='a')}
+  OUTPUTS = {'output': ChannelParameter(type_name='c')}
 
 
 class _FakeComponentSpecD(types.ComponentSpec):
   PARAMETERS = {}
   INPUTS = {
-      'b': ChannelParameter(type=_ArtifactTypeB),
-      'c': ChannelParameter(type=_ArtifactTypeC),
+      'b': ChannelParameter(type_name='b'),
+      'c': ChannelParameter(type_name='c'),
   }
-  OUTPUTS = {'output': ChannelParameter(type=_ArtifactTypeD)}
+  OUTPUTS = {'output': ChannelParameter(type_name='d')}
 
 
 class _FakeComponentSpecE(types.ComponentSpec):
   PARAMETERS = {}
   INPUTS = {
-      'a': ChannelParameter(type=_ArtifactTypeA),
-      'b': ChannelParameter(type=_ArtifactTypeB),
-      'd': ChannelParameter(type=_ArtifactTypeD),
+      'a': ChannelParameter(type_name='a'),
+      'b': ChannelParameter(type_name='b'),
+      'd': ChannelParameter(type_name='d'),
   }
-  OUTPUTS = {'output': ChannelParameter(type=_ArtifactTypeE)}
+  OUTPUTS = {'output': ChannelParameter(type_name='e')}
 
 
 class _FakeComponent(base_component.BaseComponent):
@@ -123,26 +103,26 @@ class BeamDagRunnerTest(tf.test.TestCase):
   )
   def testRun(self):
     component_a = _FakeComponent(
-        _FakeComponentSpecA(output=types.Channel(type=_ArtifactTypeA)))
+        _FakeComponentSpecA(output=types.Channel(type_name='a')))
     component_b = _FakeComponent(
         _FakeComponentSpecB(
             a=component_a.outputs['output'],
-            output=types.Channel(type=_ArtifactTypeB)))
+            output=types.Channel(type_name='b')))
     component_c = _FakeComponent(
         _FakeComponentSpecC(
             a=component_a.outputs['output'],
-            output=types.Channel(type=_ArtifactTypeC)))
+            output=types.Channel(type_name='c')))
     component_d = _FakeComponent(
         _FakeComponentSpecD(
             b=component_b.outputs['output'],
             c=component_c.outputs['output'],
-            output=types.Channel(type=_ArtifactTypeD)))
+            output=types.Channel(type_name='d')))
     component_e = _FakeComponent(
         _FakeComponentSpecE(
             a=component_a.outputs['output'],
             b=component_b.outputs['output'],
             d=component_d.outputs['output'],
-            output=types.Channel(type=_ArtifactTypeE)))
+            output=types.Channel(type_name='e')))
 
     test_pipeline = pipeline.Pipeline(
         pipeline_name='x',

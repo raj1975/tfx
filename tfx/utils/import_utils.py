@@ -19,7 +19,6 @@ from __future__ import division
 from __future__ import print_function
 
 import importlib
-import types
 from typing import Any, Callable, Text, Type
 
 import six
@@ -59,12 +58,13 @@ def import_func_from_source(source_path: Text, fn_name: Text) -> Callable:  # py
         raise
 
     else:
-      loader = importlib.machinery.SourceFileLoader(
-          fullname='user_module',
-          path=source_path,
-      )
-      user_module = types.ModuleType(loader.name)
-      loader.exec_module(user_module)
+      spec = importlib.util.spec_from_file_location('user_module', source_path)
+
+      if not spec:
+        raise ImportError()
+
+      user_module = importlib.util.module_from_spec(spec)
+      spec.loader.exec_module(user_module)  # pytype: disable=attribute-error
       return getattr(user_module, fn_name)
 
   except IOError:

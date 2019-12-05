@@ -116,14 +116,9 @@ class PipelineInfo(object):
     self.run_id = run_id
 
   @property
-  def pipeline_run_context_name(self) -> Text:
-    """Context name for the current pipeline run."""
+  def run_context_name(self) -> Text:
+    """Context name for current run."""
     return '{}.{}'.format(self.pipeline_name, self.run_id)
-
-  @property
-  def pipeline_context_name(self) -> Text:
-    """Context name for the pipeline."""
-    return self.pipeline_name
 
 
 class ComponentInfo(object):
@@ -133,24 +128,11 @@ class ComponentInfo(object):
     component_type: type of the component. Usually determined by the executor
       python path or image uri of.
     component_id: a unique identifier of the component instance within pipeline.
-    pipeline_info: the pipeline info of the current pipeline run.
   """
 
-  def __init__(self, component_type: Text, component_id: Text,
-               pipeline_info: PipelineInfo):
+  def __init__(self, component_type: Text, component_id: Text):
     self.component_type = component_type
     self.component_id = component_id
-    self.pipeline_info = pipeline_info
-
-  @property
-  def component_run_context_name(self) -> Text:
-    """"Context name for current component run."""
-    if self.pipeline_info.run_id:
-      return '{}.{}'.format(self.pipeline_info.pipeline_run_context_name,
-                            self.component_id)
-    else:
-      return '{}.{}'.format(self.pipeline_info.pipeline_context_name,
-                            self.component_id)
 
 
 # TODO(b/146361011): Implement a checking mechanism preventing users from using
@@ -206,3 +188,4 @@ class RuntimeParameter(json_utils.Jsonable):
   def __hash__(self):
     """RuntimeParameter is uniquely identified by its name."""
     return self.name.__hash__()
+

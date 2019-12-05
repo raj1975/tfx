@@ -18,54 +18,31 @@
     scenarios such as warmstart.
 *   Removed tf.compat.v1 for iris and cifar10 example.
 *   Updated trainer executor to pass through custom config to user module.
-*   Artifact type-specific properties can be defined through overriding the
-    PROPERTIES dictionary of a `types.artifact.Artifact` subclass.
-*   Added new example of chicago_taxi_pipeline on Google Cloud Bigquery ML.
-*   Supported hparams artifact as input in Trainer, this is for preparing the
-    tuner support.
 
 ## Bug fixes and other changes
 
 *   CSVExampleGen: started using the CSV decoding utilities in `tfx-bsl`
     (`tfx-bsl>=0.15.2`)
-*   Fixed problems with Airflow tutorial notebooks
+*   Fix problems with Airflow tutorial notebooks
 *   Performance improvements for the Transform Component (for its statistics
     generation).
 *   Depended on `pyarrow>=0.14,<0.15`.
-*   Raised exceptions when container building fails.
+*   Raise exceptions when container building fails.
 *   Enhanced custom slack component by adding a kubeflow example.
-*   Allowed windows style paths in Transform component cache.
-*   Fixed bug in CLI (--engine=kubeflow) which uses hard coded obsolete image
+*   Allow windows style paths in Transform component cache.
+*   Fixed bug in CLI (--engine=kubeflow) which uses hard coded obslete image
     (TFX 0.14.0) as the base image.
-*   Fixed bug in CLI (--engine=kubeflow) which could not handle skaffold
-    response when an already built image is reused.
-*   Allowed users to specify the region to use when serving with AI Platform.
-*   Allowed users to give deterministic job id to AI Platform Training job.
+*   Allow users to specify the region to use when serving with for AI Platform.
+*   Allow users to give deterministic job id to AI Platform Training job.
 *   System-managed artifact properties ("name", "state", "pipeline_name" and
     "producer_component") are now stored as ML Metadata artifact custom
     properties.
-*   Fixed loading trainer and transformation functions from python module files
-    without the .py extension.
-*   Fixed some ill-formed visualization when running on KFP.
-*   Removed system info from artifact properties and use channels to hold info
-    for generating MLMD queries.
-*   Relied on MLMD context for inter component artifact resolution.
-*   Added pipeline level context and component run level context.
-*   Included test data for examples/chicago_taxi_pipeline in package.
+
 ### Deprecations
 
 ## Breaking changes
-*   Artifact type name strings to the `types.artifact.Artifact` and
-    `types.channel.Channel` classes are no longer supported; usage here should
-    be replaced with references to the artifact subclasses defined in
-    `types.standard_artfacts.*` or to custom subclasses of
-    `types.artifact.Artifact`.
-*   Standard artifact TYPE_NAME strings were reconciled to match their class
-    names in `types.standard_artifacts`.
 *   The "split" property on multiple artifacts has been replaced with the
     JSON-encoded "split_names" property on a single grouped artifact.
-*   Caching mechanism was shifted to rely on pipeline context. Caching will not
-    be triggered when running this version of TFX for the first time.
 
 ### For pipeline authors
 

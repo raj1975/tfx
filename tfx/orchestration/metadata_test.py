@@ -22,6 +22,7 @@ from __future__ import print_function
 import mock
 import tensorflow as tf
 from ml_metadata.proto import metadata_store_pb2
+from tfx import types
 from tfx.orchestration import data_types
 from tfx.orchestration import metadata
 from tfx.types import artifact_utils
@@ -35,6 +36,10 @@ class MetadataTest(tf.test.TestCase):
     super(MetadataTest, self).setUp()
     self._connection_config = metadata_store_pb2.ConnectionConfig()
     self._connection_config.sqlite.SetInParent()
+    self._component_info = data_types.ComponentInfo(
+        component_type='a.b.c', component_id='my_component')
+    self._component_info2 = data_types.ComponentInfo(
+        component_type='a.b.d', component_id='my_component_2')
     self._pipeline_info = data_types.PipelineInfo(
         pipeline_name='my_pipeline', pipeline_root='/tmp', run_id='my_run_id')
     self._pipeline_info2 = data_types.PipelineInfo(
@@ -43,14 +48,6 @@ class MetadataTest(tf.test.TestCase):
         pipeline_name='my_pipeline2', pipeline_root='/tmp', run_id='my_run_id')
     self._pipeline_info4 = data_types.PipelineInfo(
         pipeline_name='my_pipeline2', pipeline_root='/tmp', run_id='my_run_id2')
-    self._component_info = data_types.ComponentInfo(
-        component_type='a.b.c',
-        component_id='my_component',
-        pipeline_info=self._pipeline_info)
-    self._component_info2 = data_types.ComponentInfo(
-        component_type='a.b.d',
-        component_id='my_component_2',
-        pipeline_info=self._pipeline_info)
 
   def testEmptyArtifact(self):
     with metadata.Metadata(connection_config=self._connection_config) as m:
@@ -140,8 +137,7 @@ class MetadataTest(tf.test.TestCase):
 
   def testExecution(self):
     with metadata.Metadata(connection_config=self._connection_config) as m:
-      contexts = m.register_contexts_if_not_exists(self._pipeline_info,
-                                                   self._component_info)
+      context_id = m.register_run_context_if_not_exists(self._pipeline_info)
 
       # Test prepare_execution.
       exec_properties = {'arg_one': 1}
@@ -149,12 +145,12 @@ class MetadataTest(tf.test.TestCase):
           exec_properties=exec_properties,
           pipeline_info=self._pipeline_info,
           component_info=self._component_info,
-          contexts=contexts)
-      [execution] = m.store.get_executions_by_context(contexts[0].id)
+          run_context_id=context_id)
+      [execution] = m.store.get_executions_by_context(context_id)
       self.assertProtoEquals(
           """
         id: 1
-        type_id: 4
+        type_id: 2
         properties {
           key: "state"
           value {
@@ -231,8 +227,7 @@ class MetadataTest(tf.test.TestCase):
 
   def testRegisterExecutionUpdatedExecutionType(self):
     with metadata.Metadata(connection_config=self._connection_config) as m:
-      contexts = m.register_contexts_if_not_exists(self._pipeline_info,
-                                                   self._component_info)
+      context_id = m.register_run_context_if_not_exists(self._pipeline_info)
 
       # Puts in execution with less columns needed in MLMD schema first and
       # puts in execution with more columns needed next. Verifies the schema
@@ -243,18 +238,18 @@ class MetadataTest(tf.test.TestCase):
           exec_properties=exec_properties_one,
           pipeline_info=self._pipeline_info,
           component_info=self._component_info,
-          contexts=contexts)
+          run_context_id=context_id)
       eid_two = m.register_execution(
           exec_properties=exec_properties_two,
           pipeline_info=self._pipeline_info,
           component_info=self._component_info,
-          contexts=contexts)
+          run_context_id=context_id)
       [execution_one,
        execution_two] = m.store.get_executions_by_id([eid_one, eid_two])
       self.assertProtoEquals(
           """
         id: 1
-        type_id: 4
+        type_id: 2
         properties {
           key: "state"
           value {
@@ -294,7 +289,7 @@ class MetadataTest(tf.test.TestCase):
       self.assertProtoEquals(
           """
         id: 2
-        type_id: 4
+        type_id: 2
         properties {
           key: "state"
           value {
@@ -340,8 +335,7 @@ class MetadataTest(tf.test.TestCase):
 
   def testRegisterExecutionBackwardCompatibility(self):
     with metadata.Metadata(connection_config=self._connection_config) as m:
-      contexts = m.register_contexts_if_not_exists(self._pipeline_info,
-                                                   self._component_info)
+      context_id = m.register_run_context_if_not_exists(self._pipeline_info)
 
       # Puts in execution with more columns needed in MLMD schema first and
       # puts in execution with less columns needed next. Verifies the schema
@@ -352,18 +346,18 @@ class MetadataTest(tf.test.TestCase):
           exec_properties=exec_properties_two,
           pipeline_info=self._pipeline_info,
           component_info=self._component_info,
-          contexts=contexts)
+          run_context_id=context_id)
       eid_one = m.register_execution(
           exec_properties=exec_properties_one,
           pipeline_info=self._pipeline_info,
           component_info=self._component_info,
-          contexts=contexts)
+          run_context_id=context_id)
       [execution_one,
        execution_two] = m.store.get_executions_by_id([eid_one, eid_two])
       self.assertProtoEquals(
           """
         id: 2
-        type_id: 4
+        type_id: 2
         properties {
           key: "state"
           value {
@@ -403,7 +397,7 @@ class MetadataTest(tf.test.TestCase):
       self.assertProtoEquals(
           """
         id: 1
-        type_id: 4
+        type_id: 2
         properties {
           key: "state"
           value {
@@ -452,13 +446,10 @@ class MetadataTest(tf.test.TestCase):
 
       # Create an 'previous' execution.
       exec_properties = {'log_root': 'path'}
-      contexts = m.register_contexts_if_not_exists(self._pipeline_info,
-                                                   self._component_info)
       eid = m.register_execution(
           exec_properties=exec_properties,
           pipeline_info=self._pipeline_info,
-          component_info=self._component_info,
-          contexts=contexts)
+          component_info=self._component_info)
       input_artifact = standard_artifacts.Examples()
       m.publish_artifacts([input_artifact])
       output_artifact = standard_artifacts.Examples()
@@ -481,9 +472,7 @@ class MetadataTest(tf.test.TestCase):
               exec_properties=exec_properties,
               pipeline_info=self._pipeline_info,
               component_info=data_types.ComponentInfo(
-                  component_id='unique',
-                  component_type='a.b.c',
-                  pipeline_info=self._pipeline_info)))
+                  component_id='unique', component_type='a.b.c')))
       self.assertEqual(
           eid,
           m.previous_execution(
@@ -546,23 +535,21 @@ class MetadataTest(tf.test.TestCase):
   def testSearchArtifacts(self):
     with metadata.Metadata(connection_config=self._connection_config) as m:
       exec_properties = {'log_root': 'path'}
-      contexts = m.register_contexts_if_not_exists(self._pipeline_info,
-                                                   self._component_info)
       eid = m.register_execution(
           exec_properties=exec_properties,
           pipeline_info=self._pipeline_info,
-          component_info=self._component_info,
-          contexts=contexts)
+          component_info=self._component_info)
       input_artifact = standard_artifacts.Examples()
       m.publish_artifacts([input_artifact])
-      output_artifact = standard_artifacts.Examples()
+      output_artifact = types.Artifact(type_name='MyOutputArtifact')
       output_artifact.uri = 'my/uri'
       input_dict = {'input': [input_artifact]}
       output_dict = {'output': [output_artifact]}
       m.publish_execution(eid, input_dict, output_dict)
       [artifact] = m.search_artifacts(
           artifact_name='output',
-          pipeline_info=self._pipeline_info,
+          pipeline_name=self._pipeline_info.pipeline_name,
+          run_id=self._pipeline_info.run_id,
           producer_component_id=self._component_info.component_id)
       self.assertEqual(artifact.uri, output_artifact.uri)
 
@@ -575,7 +562,7 @@ class MetadataTest(tf.test.TestCase):
           component_info=self._component_info)
       input_artifact = standard_artifacts.Examples()
       m.publish_artifacts([input_artifact])
-      output_artifact = standard_artifacts.Examples()
+      output_artifact = types.Artifact(type_name='MyOutputArtifact')
       output_artifact.uri = 'my/uri'
       [published_artifact] = m.publish_artifacts([output_artifact])
       output_artifact.set_mlmd_artifact(published_artifact)
@@ -586,12 +573,8 @@ class MetadataTest(tf.test.TestCase):
 
   def testGetExecutionStates(self):
     with metadata.Metadata(connection_config=self._connection_config) as m:
-      contexts_one = m.register_contexts_if_not_exists(self._pipeline_info,
-                                                       self._component_info)
-      contexts_two = m.register_contexts_if_not_exists(self._pipeline_info,
-                                                       self._component_info2)
-      contexts_three = m.register_contexts_if_not_exists(
-          self._pipeline_info2, self._component_info)
+      context_id = m.register_run_context_if_not_exists(self._pipeline_info)
+      context_id2 = m.register_run_context_if_not_exists(self._pipeline_info2)
 
       self.assertListEqual(
           [self._pipeline_info.run_id, self._pipeline_info2.run_id],
@@ -601,18 +584,18 @@ class MetadataTest(tf.test.TestCase):
           exec_properties={},
           pipeline_info=self._pipeline_info,
           component_info=self._component_info,
-          contexts=contexts_one)
+          run_context_id=context_id)
       m.publish_execution(eid, {}, {})
       m.register_execution(
           exec_properties={},
           pipeline_info=self._pipeline_info,
           component_info=self._component_info2,
-          contexts=contexts_two)
+          run_context_id=context_id)
       m.register_execution(
           exec_properties={},
           pipeline_info=self._pipeline_info2,
           component_info=self._component_info,
-          contexts=contexts_three)
+          run_context_id=context_id2)
       states = m.get_execution_states(self._pipeline_info)
       self.assertDictEqual(
           {
@@ -624,21 +607,15 @@ class MetadataTest(tf.test.TestCase):
 
   def testContext(self):
     with metadata.Metadata(connection_config=self._connection_config) as m:
-      contexts = m.register_contexts_if_not_exists(self._pipeline_info,
-                                                   self._component_info)
 
+      cid1 = m.register_run_context_if_not_exists(self._pipeline_info)
+      cid2 = m.register_run_context_if_not_exists(self._pipeline_info2)
+      cid3 = m.register_run_context_if_not_exists(self._pipeline_info3)
+
+      context_type = m.store.get_context_type('run')
       self.assertProtoEquals(
           """
           id: 1
-          name: 'pipeline'
-          properties {
-            key: "pipeline_name"
-            value: STRING
-          }
-          """, m.store.get_context_type(metadata._CONTEXT_TYPE_PIPELINE))
-      self.assertProtoEquals(
-          """
-          id: 2
           name: 'run'
           properties {
             key: "pipeline_name"
@@ -648,38 +625,33 @@ class MetadataTest(tf.test.TestCase):
             key: "run_id"
             value: STRING
           }
-          """, m.store.get_context_type(metadata._CONTEXT_TYPE_PIPELINE_RUN))
+          """, context_type)
+      [context] = m.store.get_contexts_by_id([cid1])
       self.assertProtoEquals(
           """
-          id: 3
-          name: 'component_run'
+          id: 1
+          type_id: 1
+          name: 'my_pipeline.my_run_id'
           properties {
             key: "pipeline_name"
-            value: STRING
+            value {
+              string_value: "my_pipeline"
+            }
           }
           properties {
             key: "run_id"
-            value: STRING
+            value {
+              string_value: "my_run_id"
+            }
           }
-          properties {
-            key: "component_id"
-            value: STRING
-          }
-          """, m.store.get_context_type(metadata._CONTEXT_TYPE_COMPONENT_RUN))
-      self.assertEqual(len(contexts), 3)
+          """, context)
+
       self.assertEqual(
-          contexts[0],
-          m._get_context_by_name(metadata._CONTEXT_TYPE_PIPELINE,
-                                 self._pipeline_info.pipeline_context_name))
-      self.assertEqual(
-          contexts[1],
-          m._get_context_by_name(metadata._CONTEXT_TYPE_PIPELINE_RUN,
-                                 self._pipeline_info.pipeline_run_context_name))
-      self.assertEqual(
-          contexts[2],
-          m._get_context_by_name(
-              metadata._CONTEXT_TYPE_COMPONENT_RUN,
-              self._component_info.component_run_context_name))
+          cid1, m.register_run_context_if_not_exists(self._pipeline_info))
+      self.assertEqual(cid1, m._get_run_context_id(self._pipeline_info))
+      self.assertEqual(cid2, m._get_run_context_id(self._pipeline_info2))
+      self.assertEqual(cid3, m._get_run_context_id(self._pipeline_info3))
+      self.assertEqual(None, m._get_run_context_id(self._pipeline_info4))
 
 
 if __name__ == '__main__':

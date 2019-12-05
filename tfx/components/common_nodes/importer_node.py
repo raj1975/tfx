@@ -51,8 +51,6 @@ class ImporterDriver(base_driver.BaseDriver):
       absl.logging.info('Processing source uri: %s, split: %s' %
                         (uri, s or 'NO_SPLIT'))
 
-      result = destination_channel.type()
-
       # TODO(ccy): refactor importer to treat split name just like any other
       # property.
       unfiltered_previous_artifacts = self._metadata_handler.get_artifacts_by_uri(
@@ -61,21 +59,12 @@ class ImporterDriver(base_driver.BaseDriver):
       desired_split_names = artifact_utils.encode_split_names([s or ''])
       previous_artifacts = []
       for previous_artifact in unfiltered_previous_artifacts:
-        # TODO(ccy): refactor importer to treat split name just like any other
-        # property.
-        if result.PROPERTIES and SPLIT_KEY in result.PROPERTIES:
-          # Consider the previous artifact only if the split_names match.
-          split_names = previous_artifact.properties.get('split_names', None)
-          if split_names and split_names.string_value == desired_split_names:
-            previous_artifacts.append(previous_artifact)
-        else:
-          # Unconditionally add the previous artifact for consideration.
+        split_names = previous_artifact.properties.get('split_names', None)
+        if split_names and split_names.string_value == desired_split_names:
           previous_artifacts.append(previous_artifact)
 
-      # TODO(ccy): refactor importer to treat split name just like any other
-      # property.
-      if SPLIT_KEY in result.artifact_type.properties:
-        result.split_names = desired_split_names
+      result = types.Artifact(type_name=destination_channel.type_name)
+      result.split_names = desired_split_names
       result.uri = uri
 
       # If any registered artifact with the same uri also has the same
@@ -187,10 +176,7 @@ class ImporterNode(base_node.BaseNode):
     artifacts = []
     for split in self._split:
       new_artifact = artifact_type()
-      # TODO(ccy): get rid of this logic when arbitrary property import is
-      # implemented in the importer.
-      if artifact_type.PROPERTIES and SPLIT_KEY in artifact_type.PROPERTIES:
-        new_artifact.split_names = artifact_utils.encode_split_names([split])
+      new_artifact.split_names = artifact_utils.encode_split_names([split])
       artifacts.append(new_artifact)
     self._output_dict = {
         IMPORT_RESULT_KEY:
