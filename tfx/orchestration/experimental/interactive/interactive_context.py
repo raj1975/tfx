@@ -163,8 +163,12 @@ class InteractiveContext(object):
     # TODO(hongyes): figure out how to resolve launcher class in the interactive
     # context.
     launcher = in_process_component_launcher.InProcessComponentLauncher.create(
-        component, pipeline_info, driver_args, self.metadata_connection_config,
-        beam_pipeline_args, additional_pipeline_args)
+        component,
+        pipeline_info,
+        driver_args,
+        beam_pipeline_args,
+        additional_pipeline_args,
+        metadata_connection_config=self.metadata_connection_config)
     execution_id = launcher.launch().execution_id
 
     return execution_result.ExecutionResult(

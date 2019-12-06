@@ -42,11 +42,13 @@ class BaseComponentLauncher(with_metaclass(abc.ABCMeta, object)):
       component: base_node.BaseNode,
       pipeline_info: data_types.PipelineInfo,
       driver_args: data_types.DriverArgs,
-      metadata_connection_config: metadata_store_pb2.ConnectionConfig,
       beam_pipeline_args: List[Text],
       additional_pipeline_args: Dict[Text, Any],
       component_config: Optional[
           base_component_config.BaseComponentConfig] = None,
+      metadata_connection: Optional[metadata.Metadata] = None,
+      metadata_connection_config: Optional[
+          metadata_store_pb2.ConnectionConfig] = None,
   ):
     """Initialize a BaseComponentLauncher.
 
@@ -56,11 +58,14 @@ class BaseComponentLauncher(with_metaclass(abc.ABCMeta, object)):
         properties.
       driver_args: An instance of data_types.DriverArgs that holds component
         specific driver args.
-      metadata_connection_config: ML metadata connection config.
       beam_pipeline_args: Beam pipeline args for beam jobs within executor.
       additional_pipeline_args: Additional pipeline args.
       component_config: Optional component specific config to instrument
         launcher on how to launch a component.
+      metadata_connection: ML metadata connection. Either metadata_connection or
+        metadata_connection_config must be set.
+      metadata_connection_config: ML metadata connection config. Either
+        metadata_connection or metadata_connection_config must be set.
 
     Raises:
       ValueError: when component and component_config are not launchable by the
@@ -80,7 +85,18 @@ class BaseComponentLauncher(with_metaclass(abc.ABCMeta, object)):
     self._output_dict = component.outputs.get_all()
     self._exec_properties = component.exec_properties
 
-    self._metadata_connection_config = metadata_connection_config
+    if metadata_connection and metadata_connection_config:
+      raise ValueError(
+          'Can\'t set both metadata_connection and metadata_connection_config')
+    if metadata_connection:
+      self._metadata_connection = metadata_connection
+    elif metadata_connection_config:
+      self._metadata_connection = metadata.Metadata(metadata_connection_config)
+    else:
+      raise ValueError(
+          'One of metadata_connection or metadata_connection_config must be set'
+      )
+
     self._beam_pipeline_args = beam_pipeline_args
 
     self._additional_pipeline_args = additional_pipeline_args
@@ -102,11 +118,13 @@ class BaseComponentLauncher(with_metaclass(abc.ABCMeta, object)):
       component: base_node.BaseNode,
       pipeline_info: data_types.PipelineInfo,
       driver_args: data_types.DriverArgs,
-      metadata_connection_config: metadata_store_pb2.ConnectionConfig,
       beam_pipeline_args: List[Text],
       additional_pipeline_args: Dict[Text, Any],
       component_config: Optional[
-          base_component_config.BaseComponentConfig] = None
+          base_component_config.BaseComponentConfig] = None,
+      metadata_connection: Optional[metadata.Metadata] = None,
+      metadata_connection_config: Optional[
+          metadata_store_pb2.ConnectionConfig] = None,
   ) -> 'BaseComponentLauncher':
     """Initialize a ComponentLauncher directly from a BaseComponent instance.
 
@@ -120,11 +138,14 @@ class BaseComponentLauncher(with_metaclass(abc.ABCMeta, object)):
         properties.
       driver_args: An instance of data_types.DriverArgs that holds component
         specific driver args.
-      metadata_connection_config: ML metadata connection config.
       beam_pipeline_args: Beam pipeline args for beam jobs within executor.
       additional_pipeline_args: Additional pipeline args.
       component_config: Optional component specific config to instrument
         launcher on how to launch a component.
+      metadata_connection: ML metadata connection. Either metadata_connection or
+        metadata_connection_config must be set.
+      metadata_connection_config: ML metadata connection config. Either
+        metadata_connection or metadata_connection_config must be set.
 
     Returns:
       A new instance of component launcher.
@@ -133,10 +154,11 @@ class BaseComponentLauncher(with_metaclass(abc.ABCMeta, object)):
         component=component,
         pipeline_info=pipeline_info,
         driver_args=driver_args,
-        metadata_connection_config=metadata_connection_config,
         beam_pipeline_args=beam_pipeline_args,
         additional_pipeline_args=additional_pipeline_args,
-        component_config=component_config)
+        component_config=component_config,
+        metadata_connection=metadata_connection,
+        metadata_connection_config=metadata_connection_config)
 
   @classmethod
   @abc.abstractmethod
@@ -152,8 +174,7 @@ class BaseComponentLauncher(with_metaclass(abc.ABCMeta, object)):
                                                                types.Channel],
       exec_properties: Dict[Text, Any]) -> data_types.ExecutionDecision:
     """Prepare inputs, outputs and execution properties for actual execution."""
-
-    with metadata.Metadata(self._metadata_connection_config) as m:
+    with self._metadata_connection as m:
       driver = self._driver_class(metadata_handler=m)
 
       execution_decision = driver.pre_execution(
@@ -179,8 +200,7 @@ class BaseComponentLauncher(with_metaclass(abc.ABCMeta, object)):
                      input_dict: Dict[Text, List[types.Artifact]],
                      output_dict: Dict[Text, List[types.Artifact]]) -> None:
     """Publish execution result to ml metadata."""
-
-    with metadata.Metadata(self._metadata_connection_config) as m:
+    with self._metadata_connection as m:
       p = publisher.Publisher(metadata_handler=m)
       p.publish_execution(
           execution_id=execution_id,

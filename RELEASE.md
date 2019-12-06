@@ -23,6 +23,8 @@
 *   Added new example of chicago_taxi_pipeline on Google Cloud Bigquery ML.
 *   Supported hparams artifact as input in Trainer, this is for preparing the
     tuner support.
+*   Added support for pipelines run in Kubeflow to log the Argo pod ID as an
+    execution property.
 
 ## Bug fixes and other changes
 
