@@ -20,7 +20,7 @@ from __future__ import print_function
 
 # Standard Imports
 import mock
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from ml_metadata.proto import metadata_store_pb2
 from tfx.orchestration import data_types
 from tfx.orchestration import metadata

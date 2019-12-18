@@ -21,6 +21,7 @@ from __future__ import print_function
 import os
 import mock
 import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from ml_metadata.proto import metadata_store_pb2
 from tfx import types
 from tfx.components.base import base_driver

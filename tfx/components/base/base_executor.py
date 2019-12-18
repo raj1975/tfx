@@ -33,7 +33,7 @@ from apache_beam.portability import python_urns
 from apache_beam.portability.api import beam_runner_api_pb2
 from apache_beam.runners.portability import fn_api_runner
 from future.utils import with_metaclass
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tfx import types
 from tfx.types import artifact_utils

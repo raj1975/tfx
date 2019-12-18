@@ -25,7 +25,7 @@ import sys
 import unittest
 
 import absl
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tfx.components.base import executor_spec
 from tfx.components.common_nodes.importer_node import ImporterNode

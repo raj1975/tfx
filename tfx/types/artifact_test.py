@@ -21,7 +21,7 @@ from __future__ import unicode_literals
 
 # Standard Imports
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from ml_metadata.proto import metadata_store_pb2
 from tfx.types import artifact
 from tfx.utils import json_utils
