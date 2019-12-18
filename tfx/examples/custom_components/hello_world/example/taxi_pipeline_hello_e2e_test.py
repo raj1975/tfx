@@ -21,7 +21,7 @@ from __future__ import print_function
 import os
 from typing import Text
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tfx.examples.custom_components_hello_world import taxi_pipeline_hello
 from tfx.orchestration import metadata
