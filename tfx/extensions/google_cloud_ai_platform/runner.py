@@ -80,6 +80,16 @@ def _get_caip_python_version() -> Text:
   return {2: '2.7', 3: '3.5'}[sys.version_info.major]
 
 
+def _aip_training_labels() -> Dict[Text, Text]:
+  """Returns a dict of key-values as labels for CAIP training."""
+  # TODO(zhitaoli): capture dsl and orchestrator as labels.
+  return dict({
+      'component': 'trainer',
+      'tfx_version': version.__version__,
+      'py_version': _get_caip_python_version(),
+  })
+
+
 def start_aip_training(input_dict: Dict[Text, List[types.Artifact]],
                        output_dict: Dict[Text, List[types.Artifact]],
                        exec_properties: Dict[Text,
@@ -103,6 +113,7 @@ def start_aip_training(input_dict: Dict[Text, List[types.Artifact]],
     job_id: Job ID for AI Platform Training job. If not supplied,
       system-determined unique ID is given. Refer to
     https://cloud.google.com/ml-engine/reference/rest/v1/projects.jobs#resource-job
+
   Returns:
     None
   Raises:
@@ -136,6 +147,8 @@ def start_aip_training(input_dict: Dict[Text, List[types.Artifact]],
     }
 
   training_inputs['args'] = job_args
+  training_inputs['labels'] = _aip_training_labels().update(
+      training_inputs.get('labels'), {})
 
   # Pop project_id so AIP doesn't complain about an unexpected parameter.
   # It's been a stowaway in aip_args and has finally reached its destination.

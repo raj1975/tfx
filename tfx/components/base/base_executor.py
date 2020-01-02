@@ -37,6 +37,7 @@ import tensorflow as tf
 
 from tfx import types
 from tfx.types import artifact_utils
+from tfx.utils import monitoring_utils
 from tfx.utils import dependency_utils
 
 
@@ -91,6 +92,8 @@ class BaseExecutor(with_metaclass(abc.ABCMeta, object)):
 
     if self._beam_pipeline_args:
       self._beam_pipeline_args = dependency_utils.make_beam_dependency_flags(
+          self._beam_pipeline_args)
+      self._beam_pipeline_args = monitoring_utils.make_beam_labels_flags(
           self._beam_pipeline_args)
 
   # TODO(b/126182711): Look into how to support fusion of multiple executors
