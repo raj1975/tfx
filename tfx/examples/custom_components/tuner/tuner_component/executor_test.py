@@ -32,7 +32,8 @@ from tfx.types import standard_artifacts
 from tfx.utils import io_utils
 
 # TODO(jyzhao): v1 doesn't work for dataset and tuner.
-tf.enable_v2_behavior()
+if hasattr(tf, 'enable_v2_behavior'):
+  tf.enable_v2_behavior()
 
 
 class ExecutorTest(tf.test.TestCase):
@@ -72,13 +73,13 @@ class ExecutorTest(tf.test.TestCase):
 
     self._output_dict = {
         'model': [model],
-        'study_best_hparams_path': [self._best_hparams],
+        'best_hyperparameters': [self._best_hparams],
     }
 
   def _verify_output(self):
     # Test best hparams.
     best_hparams_path = os.path.join(self._best_hparams.uri, 'best_hparams.txt')
-    self.assertTrue(tf.gfile.Exists(best_hparams_path))
+    self.assertTrue(tf.io.gfile.exists(best_hparams_path))
     best_hparams_config = json.loads(
         file_io.read_file_to_string(best_hparams_path))
     best_hparams = HyperParameters.from_config(best_hparams_config)
