@@ -25,7 +25,7 @@ def make_required_install_packages():
       'click>=7,<8',
       'google-api-python-client>=1.7.8,<2',
       'jinja2>=2.7.3,<3',
-      'ml-metadata>=0.15,<0.16',
+      'ml-metadata>=0.21,<0.22',
       'protobuf>=3.7,<4',
       'pyarrow>=0.14,<0.15',
       'pyyaml>=3.12,<4',
